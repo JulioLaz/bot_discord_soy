@@ -5,12 +5,18 @@ import asyncio
 import json
 from datetime import datetime
 import dash
-from dash import html, dcc
+from dash import dcc
 from dash.dependencies import Input, Output, State
 import threading
-from flask import request
+import gspread
+from oauth2client.service_account import ServiceAccountCredentials
+from dash import html, dcc
 
-# Configuración del bot de Discord
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+
 TOKEN = os.getenv('DISCORD_TOKEN')
 SERVER_ID = 1273343475651317954
 CHANNEL_IDS = [
@@ -36,21 +42,46 @@ async def on_ready():
         for channel_id in CHANNEL_IDS:
             channel = bot.get_channel(channel_id)
             if channel:
-                await channel.send("**EJECUTA EL SIGUIENTE COMANDO PARA CONOCER MÁS DE TI:**\n\n 👉 **!Soy**")
-                print(f"Mensaje enviado al canal: {channel.name}")
-            else:
-                print(f"No se pudo encontrar el canal con ID {channel_id}")
-
-
+                await channel.send("**Ejecuta el siguiente comando para que conozcamos más de ti:**\n\n Escribe lo siguiente y presiona enter: **!soy**")
 
 @bot.command()
-async def Soy(ctx):
+async def soy(ctx):
     if ctx.guild.id != SERVER_ID or ctx.channel.id not in CHANNEL_IDS:
         await ctx.send("Este comando solo puede ser usado en los canales designados para la encuesta.")
         return
     
     await iniciar_encuesta_personal(ctx.channel, ctx.author)
 
+google_creds_json = os.getenv('GOOGLE_CREDENTIALS_JSON')
+if google_creds_json is None:
+    print("La variable de entorno 'GOOGLE_CREDENTIALS_JSON' no está configurada.")
+else:
+    print("Variable de entorno 'GOOGLE_CREDENTIALS_JSON' cargada correctamente.")
+
+creds_dict = json.loads(google_creds_json)
+# print(creds_dict)
+# Conectar con Google Sheets
+scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
+creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
+# creds = ServiceAccountCredentials.from_json_keyfile_name('credenciales.json', scope)  # Cambia por la ruta a tus credenciales JSON
+client = gspread.authorize(creds)
+
+# Abrir hoja de cálculo compartida
+sheet = client.open_by_key('1UTPCzSd5CFSptpjFgZtuDPAiFYU8TtZUbUJUl1WECh8')
+worksheet = sheet.get_worksheet(0)
+
+# Guarda los datos en la hoja de Google Sheets
+def guardar_en_google_sheets(respuestas):
+    try:
+        row = [respuestas.get('nombre'), respuestas.get('id'), respuestas.get('timestamp')]
+        for key, value in respuestas.items():
+            if key not in ['nombre', 'id', 'timestamp']:
+                row.append(value)
+        worksheet.append_row(row)
+    except Exception as e:
+        print(f"Error guardando en Google Sheets: {e}")
+
+# Lógica para realizar la encuesta en Discord
 async def iniciar_encuesta_personal(channel, member):
     await channel.send(f"{member.mention}, por favor cuéntanos sobre ti!")
     
@@ -79,41 +110,29 @@ async def iniciar_encuesta_personal(channel, member):
             await channel.send(f"{member.mention} no respondió a tiempo.")
             respuestas[pregunta] = "No respondió"
     
-    filename = f'respuestas_{channel.id}.json'
-    try:
-        if os.path.exists(filename):
-            with open(filename, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-        else:
-            data = {}
-        
-        data[str(member.id)] = respuestas
-        
-        with open(filename, 'w', encoding='utf-8') as f:
-            json.dump(data, f, ensure_ascii=False, indent=4)
-        await channel.send(f"{member.mention}, ¡gracias por participar en la encuesta! Tus respuestas han sido guardadas.")
-    except Exception as e:
-        await channel.send(f"Ocurrió un error al guardar las respuestas: {str(e)}")
-        print(f"Error al guardar respuestas: {str(e)}")
+    guardar_en_google_sheets(respuestas)
+    await channel.send(f"{member.mention}, ¡gracias por participar!")
 
 # Variables globales para controlar el estado del bot
 bot_thread = None
 bot_running = False
 
-# Configuración de la aplicación Dash
+# Inicialización de la aplicación Dash
 app = dash.Dash(__name__)
 server = app.server
 
 app.layout = html.Div([
+
+    # Aquí puedes definir los elementos de tu layout
     html.H1("Bot de Discord - Panel de Control"),
     html.Div([
-        html.Button("Iniciar Bot", id="start-bot", n_clicks=0),
-        html.Button("Detener Bot", id="stop-bot", n_clicks=0, disabled=True),
+        html.Button("Iniciar Bot", id="start-bot",  className='start-bot', n_clicks=0),
+        html.Button("Detener Bot", id="stop-bot", n_clicks=0, disabled=True, className='stop-bot'),
     ]),
     html.Div(id='bot-status'),
     dcc.Interval(
         id='interval-component',
-        interval=5000,  # actualiza cada 5 segundos
+        interval=5000,  # Actualiza cada 5 segundos
         n_intervals=0
     ),
 ])
@@ -161,4 +180,4 @@ def run_discord_bot():
     bot_running = False
 
 if __name__ == '__main__':
-    app.run_server(debug=True, host='0.0.0.0', port=int(os.environ.get('PORT', 8080)))
+    app.run_server(debug=True, host='0.0.0.0', port=int(os.getenv('PORT', 8080)))
