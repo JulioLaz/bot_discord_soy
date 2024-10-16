@@ -11,7 +11,6 @@ import threading
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 from dash import html, dcc
-
 from dotenv import load_dotenv
 import os
 
@@ -89,6 +88,7 @@ async def iniciar_encuesta_personal(channel, member):
         "😁 - Nombre: ",
         "🔢 - Edad: ",
         "🌎 - País donde vives: "
+        "✒️ - Qué esperas de BX? "
     ]
     
     respuestas = {
@@ -180,4 +180,5 @@ def run_discord_bot():
     bot_running = False
 
 if __name__ == '__main__':
-    app.run_server(debug=True, host='0.0.0.0', port=int(os.getenv('PORT', 8080)))
+    app.run_server(debug=True, host='127.0.0.1', port=int(os.getenv('PORT', 8080)))
+

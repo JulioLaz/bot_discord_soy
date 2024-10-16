@@ -25,6 +25,7 @@ button {
    border: none;
    color: white;
    width: 30rem;
+   cursor: pointer;
    }
 
 button:disabled {
