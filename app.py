@@ -12,6 +12,8 @@ import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 from dotenv import load_dotenv
 import logging
+import requests  # Importa la librería requests
+import time  # Importa time para usar en el bucle keep_alive
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -30,6 +32,17 @@ intents = discord.Intents.default()
 intents.message_content = True
 intents.members = True
 bot = commands.Bot(command_prefix='!', intents=intents)
+
+def keep_alive():
+    while True:
+        try:
+            requests.get("https://tu-dominio-en-render.com")  # Reemplaza con tu URL en Render
+        except requests.exceptions.RequestException as e:
+            print(f"Error: {e}")
+        time.sleep(1000)  # Realiza un ping cada 10 minutos
+
+threading.Thread(target=keep_alive, daemon=True).start()
+
 
 @bot.event
 async def on_ready():
