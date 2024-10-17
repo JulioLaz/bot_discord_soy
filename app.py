@@ -16,6 +16,8 @@ import requests  # Importa la librería requests
 import time  # Importa time para usar en el bucle keep_alive
 import pandas as pd
 
+
+# https://docs.google.com/spreadsheets/d/10aQD-tiBCvQ2IxwVVvtszRdH11atIL6NEmyaxq_gs4o/edit?usp=sharing
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
 load_dotenv()
@@ -74,14 +76,36 @@ scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/au
 creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
 client = gspread.authorize(creds)
 
-sheet = client.open_by_key('1UTPCzSd5CFSptpjFgZtuDPAiFYU8TtZUbUJUl1WECh8')
+sheet = client.open_by_key('10aQD-tiBCvQ2IxwVVvtszRdH11atIL6NEmyaxq_gs4o')
+# sheet = client.open_by_key('1UTPCzSd5CFSptpjFgZtuDPAiFYU8TtZUbUJUl1WECh8')
 worksheet = sheet.get_worksheet(0)
+
+
+def guardar_en_google_sheetsoo(respuestas):
+    try:
+        # Ensure the row matches the headers in Google Sheets
+        row = [
+            respuestas.get('nombre', ''),
+            respuestas.get('id_member', ''),
+            respuestas.get('id_channel', ''),
+            respuestas.get('timestamp', ''),
+            respuestas.get(' - Nombre: ', ''),
+            respuestas.get(' - Edad: ', ''),
+            respuestas.get(' - País donde vives: ', ''),
+            respuestas.get(' - Qué esperas de BX? ', ''),
+            respuestas.get(' - comparte tu linkedin ', '')
+        ]
+        worksheet.append_row(row)
+        logging.info(f"Datos guardados en Google Sheets: {row}")
+    except Exception as e:
+        logging.error(f"Error guardando en Google Sheets: {e}")
+
 
 def guardar_en_google_sheets(respuestas):
     try:
-        row = [respuestas.get('nombre'), respuestas.get('id'), respuestas.get('timestamp')]
+        row = [respuestas.get('user_discord'), respuestas.get('id_member'),respuestas.get('id_channel'), respuestas.get('timestamp')]
         for key, value in respuestas.items():
-            if key not in ['nombre', 'id', 'timestamp']:
+            if key not in ['user_discord', 'id_member', 'id_channel', 'timestamp']:
                 row.append(value)
         worksheet.append_row(row)
         logging.info(f"Datos guardados en Google Sheets: {row}")
@@ -98,7 +122,7 @@ async def iniciar_encuesta_personal(channel, member):
         "👉 - comparte tu linkedin ",
     ]
     respuestas = {
-        "nombre": member.name,
+        "user_discord": member.name,
         "id_member": member.id,
         "id_channel": channel.id,
         "timestamp": datetime.now().isoformat()
@@ -201,7 +225,7 @@ def descargar_csv(n_clicks):
 
 column_names = {
     'nombre': 'user_discord',
-    'id_member': 'member_id',
+    'id_member': 'id_member',
     'id_channel' : 'id_channel',
     'timestamp': 'timestamp',
     '😁 - Nombre: ': 'name',
