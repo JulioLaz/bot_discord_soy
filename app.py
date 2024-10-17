@@ -53,7 +53,7 @@ async def on_ready():
         for channel_id in CHANNEL_IDS:
             channel = bot.get_channel(channel_id)
             if channel:
-                await channel.send("**Ejecuta el siguiente comando para que conozcamos más de ti:**\n\n Escribe lo siguiente y presiona enter: **!soy**")
+                await channel.send("🙋‍♀️🙋‍♂️🙋 **Presentate:** 🙋‍♀️🙋‍♂️🙋\n\n Escribe lo siguiente y presiona enter: **!soy**")
 
 @bot.command()
 async def soy(ctx):
@@ -93,7 +93,8 @@ async def iniciar_encuesta_personal(channel, member):
         "😁 - Nombre: ",
         "🔢 - Edad: ",
         "🌎 - País donde vives: ",
-        "✒️ - Qué esperas de BX? "
+        "🤖 - Qué esperas de BX? ",
+        "👉 - comparte tu linkedin ",
     ]
     respuestas = {
         "nombre": member.name,
