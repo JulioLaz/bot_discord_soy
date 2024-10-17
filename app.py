@@ -36,7 +36,7 @@ bot = commands.Bot(command_prefix='!', intents=intents)
 def keep_alive():
     while True:
         try:
-            requests.get("https://tu-dominio-en-render.com")  # Reemplaza con tu URL en Render
+            requests.get("https://bot-discord-soy.onrender.com/")  # Reemplaza con tu URL en Render
         except requests.exceptions.RequestException as e:
             print(f"Error: {e}")
         time.sleep(1000)  # Realiza un ping cada 10 minutos
