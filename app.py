@@ -5,7 +5,7 @@ import asyncio
 import json
 from datetime import datetime
 import dash
-from dash import html, dcc, dash_table
+from dash import html, dcc, Output, Input, State, dash_table
 from dash.dependencies import Input, Output, State
 import threading
 import gspread
@@ -14,6 +14,8 @@ from dotenv import load_dotenv
 import logging
 import requests  # Importa la librería requests
 import time  # Importa time para usar en el bucle keep_alive
+import io
+import pandas as pd
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -98,7 +100,8 @@ async def iniciar_encuesta_personal(channel, member):
     ]
     respuestas = {
         "nombre": member.name,
-        "id": member.id,
+        "id_member": member.id,
+        "id_channel": channel.id,
         "timestamp": datetime.now().isoformat()
     }
     for pregunta in preguntas:
@@ -112,7 +115,7 @@ async def iniciar_encuesta_personal(channel, member):
             await channel.send(f"{member.mention} no respondió a tiempo.")
             respuestas[pregunta] = "No respondió"
     guardar_en_google_sheets(respuestas)
-    await channel.send(f"{member.mention}, ¡gracias por participar!")
+    await channel.send(f"👏👏👏 {member.mention} **¡Gracias por participar!** 😁👌")
 
 bot_thread = None
 bot_running = False
@@ -124,7 +127,6 @@ app = dash.Dash(
     assets_folder='assets'
 )
 
-# Asegúrate de tener un favicon.ico en la carpeta 'assets'
 server = app.server
 
 # Estilos personalizados
@@ -169,6 +171,10 @@ app.layout = html.Div([
             }
         ],
     ),
+    html.Div([
+        html.Button("Descargar Tabla", id="download-btn", n_clicks=0, style={'margin': '10px', 'backgroundColor': '#007bff', 'color': 'white'}),
+        dcc.Download(id="download-dataframe-csv"),        
+    ], style={'textAlign': 'center'}),    
     dcc.Interval(
         id='interval-component',
         interval=5000,
@@ -176,14 +182,34 @@ app.layout = html.Div([
     ),
 ], style={'padding': '20px'})
 
+# Función para obtener los datos de Google Sheets en formato de DataFrame
+def obtener_datos_como_dataframe():
+    headers, table_data = get_sheet_data()  # Tu función existente para obtener datos
+    df = pd.DataFrame(table_data, columns=headers)
+    return df
+
+# Callback para manejar la descarga
+@app.callback(
+    Output("download-dataframe-csv", "data"),
+    Input("download-btn", "n_clicks"),
+    prevent_initial_call=True
+)
+def descargar_csv(n_clicks):
+    df = obtener_datos_como_dataframe()
+    
+    return dcc.send_data_frame(df.to_csv, "datos_encuesta.csv", index=False)
+
+
 column_names = {
-    'nombre': 'Usuario Discord',
-    'id': 'ID Discord',
-    'timestamp': 'Fecha y Hora',
-    '😁 - Nombre: ': 'Nombre Real',
-    '🔢 - Edad: ': 'Edad',
-    '🌎 - País donde vives: ': 'País',
-    '✒️ - Qué esperas de BX? ': 'Expectativas de BX'
+    'nombre': 'user_discord',
+    'id_member': 'member_id',
+    'id_channel' : 'id_channel',
+    'timestamp': 'timestamp',
+    '😁 - Nombre: ': 'name',
+    '🔢 - Edad: ': 'age',
+    '🌎 - País donde vives: ': 'country',
+    '🤖 - Qué esperas de BX? ': 'expectations',
+    '👉 - comparte tu linkedin ': 'Linkedin'
 }
 
 def get_sheet_data():
