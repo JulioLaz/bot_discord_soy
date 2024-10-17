@@ -14,7 +14,6 @@ from dotenv import load_dotenv
 import logging
 import requests  # Importa la librería requests
 import time  # Importa time para usar en el bucle keep_alive
-import io
 import pandas as pd
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
