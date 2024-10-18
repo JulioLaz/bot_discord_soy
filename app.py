@@ -78,9 +78,9 @@ worksheet = sheet.get_worksheet(0)
 
 def guardar_en_google_sheets(respuestas):
     try:
-        row = [respuestas.get('user_discord'), respuestas.get('id_member'),respuestas.get('id_channel'), respuestas.get('timestamp')]
+        row = [respuestas.get('user_discord'), respuestas.get('id_member'),respuestas.get('id_channel'),respuestas.get('name_channel'), respuestas.get('timestamp')]
         for key, value in respuestas.items():
-            if key not in ['user_discord', 'id_member', 'id_channel', 'timestamp']:
+            if key not in ['user_discord', 'id_member', 'id_channel','name_channel', 'timestamp']:
                 row.append(value)
         worksheet.append_row(row)
         logging.info(f"Datos guardados en Google Sheets: {row}")
@@ -100,6 +100,7 @@ async def iniciar_encuesta_personal(channel, member):
         "user_discord": member.name,
         "id_member": member.id,
         "id_channel": channel.id,
+        "name_channel": channel.name,
         "timestamp": datetime.now().isoformat()
     }
     for pregunta in preguntas:
@@ -194,9 +195,7 @@ def obtener_datos_como_dataframe():
 )
 def descargar_csv(n_clicks):
     df = obtener_datos_como_dataframe()
-    
     return dcc.send_data_frame(df.to_csv, "datos_encuesta.csv", index=False)
-
 
 column_names = {
     'nombre': 'user_discord',
