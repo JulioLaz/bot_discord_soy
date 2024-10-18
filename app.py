@@ -25,6 +25,7 @@ CHANNEL_IDS = [
     1292865411892641952,  # Canal 2
     1292866910006018201,  # Canal 3
     1292867115077865583,   # Canal 4
+    1296907360576606254, # channel 5
     1296836514457849947 ### yo
 ]
 intents = discord.Intents.default()
