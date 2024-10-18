@@ -24,7 +24,8 @@ CHANNEL_IDS = [
     1292864959205867590,  # Canal 1
     1292865411892641952,  # Canal 2
     1292866910006018201,  # Canal 3
-    1292867115077865583   # Canal 4
+    1292867115077865583,   # Canal 4
+    1296836514457849947 ### yo
 ]
 intents = discord.Intents.default()
 intents.message_content = True
