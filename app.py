@@ -16,12 +16,8 @@ import requests  # Importa la librería requests
 import time  # Importa time para usar en el bucle keep_alive
 import pandas as pd
 
-
-# https://docs.google.com/spreadsheets/d/10aQD-tiBCvQ2IxwVVvtszRdH11atIL6NEmyaxq_gs4o/edit?usp=sharing
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
-
 load_dotenv()
-
 TOKEN = os.getenv('DISCORD_TOKEN')
 SERVER_ID = 1273343475651317954
 CHANNEL_IDS = [
@@ -30,7 +26,6 @@ CHANNEL_IDS = [
     1292866910006018201,  # Canal 3
     1292867115077865583   # Canal 4
 ]
-
 intents = discord.Intents.default()
 intents.message_content = True
 intents.members = True
@@ -45,7 +40,6 @@ def keep_alive():
         time.sleep(1000)  # Realiza un ping cada 10 minutos
 
 threading.Thread(target=keep_alive, daemon=True).start()
-
 
 @bot.event
 async def on_ready():
@@ -70,36 +64,16 @@ if google_creds_json is None:
     logging.error("La variable de entorno 'GOOGLE_CREDENTIALS_JSON' no está configurada.")
 else:
     logging.info("Variable de entorno 'GOOGLE_CREDENTIALS_JSON' cargada correctamente.")
+# print('google_creds_json: ',google_creds_json)
 
 creds_dict = json.loads(google_creds_json)
 scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
 creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
 client = gspread.authorize(creds)
 
-sheet = client.open_by_key('10aQD-tiBCvQ2IxwVVvtszRdH11atIL6NEmyaxq_gs4o')
-# sheet = client.open_by_key('1UTPCzSd5CFSptpjFgZtuDPAiFYU8TtZUbUJUl1WECh8')
+sheet = client.open_by_key('10aQD-tiBCvQ2IxwVVvtszRdH11atIL6NEmyaxq_gs4o') # archivo yosoy de google sheet
+# sheet = client.open_by_key('1UTPCzSd5CFSptpjFgZtuDPAiFYU8TtZUbUJUl1WECh8') # archivo soy de google sheet
 worksheet = sheet.get_worksheet(0)
-
-
-def guardar_en_google_sheetsoo(respuestas):
-    try:
-        # Ensure the row matches the headers in Google Sheets
-        row = [
-            respuestas.get('nombre', ''),
-            respuestas.get('id_member', ''),
-            respuestas.get('id_channel', ''),
-            respuestas.get('timestamp', ''),
-            respuestas.get(' - Nombre: ', ''),
-            respuestas.get(' - Edad: ', ''),
-            respuestas.get(' - País donde vives: ', ''),
-            respuestas.get(' - Qué esperas de BX? ', ''),
-            respuestas.get(' - comparte tu linkedin ', '')
-        ]
-        worksheet.append_row(row)
-        logging.info(f"Datos guardados en Google Sheets: {row}")
-    except Exception as e:
-        logging.error(f"Error guardando en Google Sheets: {e}")
-
 
 def guardar_en_google_sheets(respuestas):
     try:
