@@ -19,7 +19,7 @@ import pytz
 from datetime import datetime
 
 local_tz = pytz.timezone('America/Argentina/Buenos_Aires')
-local_time = datetime.now(local_tz).strftime("%Y-%m-%d %H:%M")
+local_time_now = datetime.now(local_tz).strftime("%Y-%m-%d %H:%M")
 
 KEEP_ALIVE_CHANNEL_ID = 1296836514457849947  # The channel ID for "yo"
 
@@ -291,7 +291,7 @@ def update_bot_status_and_table(start_clicks, stop_clicks, n_intervals, start_di
                 bot_thread.join(timeout=5)
 
     if bot_running:
-        status = f"Estado del Bot: En línea - Última actualización: {datetime.now(local_tz).strftime("%Y-%m-%d %H:%M")}" #local_time = datetime.now(local_tz).strftime("%Y-%m-%d %H:%M")
+        status = f"Estado del Bot: En línea\ninicio: {local_time_now} - actual: {datetime.now(local_tz).strftime("%Y-%m-%d %H:%M")}" #local_time = datetime.now(local_tz).strftime("%Y-%m-%d %H:%M")
         start_disabled = True
         stop_disabled = False
     else:
