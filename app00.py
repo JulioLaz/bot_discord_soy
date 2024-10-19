@@ -1,6 +1,6 @@
 import os
 import discord
-from discord.ext import commands, tasks
+from discord.ext import commands
 import asyncio
 import json
 from datetime import datetime
@@ -12,10 +12,11 @@ import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 from dotenv import load_dotenv
 import logging
-import requests
-import time
+import requests  # Importa la librería requests
+import time  # Importa time para usar en el bucle keep_alive
 import pandas as pd
 import pytz
+from datetime import datetime
 
 local_tz = pytz.timezone('America/Argentina/Buenos_Aires')
 local_time_now = datetime.now(local_tz).strftime("%Y-%m-%d %H:%M")
@@ -35,48 +36,47 @@ CHANNEL_IDS = [
     1296907360576606254,  # channel 5
     1296836514457849947   # yo
 ]
+intents = discord.Intents.default()
+intents.message_content = True
+intents.members = True
+bot = commands.Bot(command_prefix='!', intents=intents)
 
-class KeepAliveBot(commands.Bot):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+async def send_keep_alive_message():
+    channel = bot.get_channel(KEEP_ALIVE_CHANNEL_ID)
+    if channel:
+      #   current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        current_time = datetime.now(local_tz).strftime("%Y-%m-%d %H:%M")
+        await channel.send(f"Keep alive - {current_time}")
+    else:
+        print(f"Error: Could not find channel with ID {KEEP_ALIVE_CHANNEL_ID}")
 
-    async def setup_hook(self):
-        self.keep_alive.start()
-
-    async def on_ready(self):
-        logging.info(f'{self.user} ha iniciado sesión!')
-        server = self.get_guild(SERVER_ID)
-        if server:
-            logging.info(f"Buscando en el servidor: {server.name}")
-            for channel_id in CHANNEL_IDS:
-                channel = self.get_channel(channel_id)
-                if channel:
-                    await channel.send("🙋‍♀️🙋‍♂️🙋 **Presentate:** 🙋‍♀️🙋‍♂️🙋\n\n Escribe lo siguiente y presiona enter: **!soy**")
-
-    @tasks.loop(minutes=10)
-    async def keep_alive(self):
+def keep_alive():
+    while True:
         try:
             # Send a request to your Render URL
             requests.get("https://bot-discord-soy.onrender.com/")
             print("Keep-alive ping sent to Render")
             
             # Send a message to Discord
-            channel = self.get_channel(KEEP_ALIVE_CHANNEL_ID)
-            if channel:
-                current_time = datetime.now(local_tz).strftime("%Y-%m-%d %H:%M")
-                await channel.send(f"Keep alive - {current_time}")
-                print("Keep-alive message sent to Discord")
-            else:
-                print(f"Error: Could not find channel with ID {KEEP_ALIVE_CHANNEL_ID}")
+            asyncio.run_coroutine_threadsafe(send_keep_alive_message(), bot.loop)
+            print("Keep-alive message sent to Discord")
         except Exception as e:
             print(f"Error in keep_alive function: {e}")
+        time.sleep(600)  # Sleep for 10 minutes
 
-intents = discord.Intents.default()
-intents.message_content = True
-intents.members = True
-bot = KeepAliveBot(command_prefix='!', intents=intents)
+# Start the keep-alive thread
+threading.Thread(target=keep_alive, daemon=True).start()
 
-
+@bot.event
+async def on_ready():
+    logging.info(f'{bot.user} ha iniciado sesión!')
+    server = bot.get_guild(SERVER_ID)
+    if server:
+        logging.info(f"Buscando en el servidor: {server.name}")
+        for channel_id in CHANNEL_IDS:
+            channel = bot.get_channel(channel_id)
+            if channel:
+                await channel.send("🙋‍♀️🙋‍♂️🙋 **Presentate:** 🙋‍♀️🙋‍♂️🙋\n\n Escribe lo siguiente y presiona enter: **!soy**")
 
 @bot.command()
 async def soy(ctx):
@@ -87,9 +87,11 @@ async def soy(ctx):
 
 google_creds_json = os.getenv('GOOGLE_CREDENTIALS_JSON')
 if google_creds_json is None:
-    logging.error("La variable de entorno 'GOOGLE_CREDENTIALS_JSON' no está configurada.")
+    logging.error(
+        "La variable de entorno 'GOOGLE_CREDENTIALS_JSON' no está configurada.")
 else:
-    logging.info("Variable de entorno 'GOOGLE_CREDENTIALS_JSON' cargada correctamente.")
+    logging.info(
+        "Variable de entorno 'GOOGLE_CREDENTIALS_JSON' cargada correctamente.")
 
 creds_dict = json.loads(google_creds_json)
 scope = ['https://spreadsheets.google.com/feeds',
@@ -97,7 +99,8 @@ scope = ['https://spreadsheets.google.com/feeds',
 creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
 client = gspread.authorize(creds)
 
-sheet = client.open_by_key('10aQD-tiBCvQ2IxwVVvtszRdH11atIL6NEmyaxq_gs4o')
+sheet = client.open_by_key('10aQD-tiBCvQ2IxwVVvtszRdH11atIL6NEmyaxq_gs4o') # archivo yosoy de google sheet
+# sheet = client.open_by_key('1UTPCzSd5CFSptpjFgZtuDPAiFYU8TtZUbUJUl1WECh8') # archivo soy de google sheet
 worksheet = sheet.get_worksheet(0)
 
 def guardar_en_google_sheets(respuestas):
@@ -111,6 +114,7 @@ def guardar_en_google_sheets(respuestas):
         logging.info(f"Datos guardados en Google Sheets: {row}")
     except Exception as e:
         logging.error(f"Error guardando en Google Sheets: {e}")
+
 
 async def iniciar_encuesta_personal(channel, member):
     await channel.send(f"{member.mention}, por favor cuéntanos sobre ti!")
@@ -126,6 +130,7 @@ async def iniciar_encuesta_personal(channel, member):
         "id_member": member.id,
         "id_channel": channel.id,
         "name_channel": channel.name,
+      #   "timestamp": datetime.now().isoformat()
         "timestamp": datetime.now(local_tz).strftime("%Y-%m-%d %H:%M")
     }
     for pregunta in preguntas:
@@ -213,10 +218,12 @@ app.layout = html.Div([
 ], style={'padding': '20px'})
 
 def obtener_datos_como_dataframe():
+    # Tu función existente para obtener datos
     headers, table_data = get_sheet_data()
     df = pd.DataFrame(table_data, columns=headers)
     return df
 
+# Callback para manejar la descarga
 @app.callback(
     Output("download-dataframe-csv", "data"),
     Input("download-btn", "n_clicks"),
@@ -244,6 +251,7 @@ def get_sheet_data():
         headers = all_data[0]
         data = all_data[1:]
 
+        # Usar los nombres de columnas personalizados
         headers = [column_names.get(h, h) for h in headers]
 
         table_data = [dict(zip(headers, row)) for row in data]
@@ -295,7 +303,6 @@ def update_bot_status_and_table(start_clicks, stop_clicks, n_intervals, start_di
     columns = [{"name": i, "id": i} for i in headers]
     return status, start_disabled, stop_disabled, columns, table_data
 
-
 def run_discord_bot():
     global bot_running
     asyncio.set_event_loop(asyncio.new_event_loop())
@@ -303,9 +310,5 @@ def run_discord_bot():
     bot_running = False
 
 if __name__ == '__main__':
-    # Iniciar el bot en un hilo separado
-    bot_thread = threading.Thread(target=run_discord_bot, daemon=True)
-    bot_thread.start()
-    
-    # Ejecutar la aplicación Dash
-    app.run_server(debug=True, host='127.0.0.1', port=int(os.getenv('PORT', 8080)))
+    app.run_server(debug=True, host='127.0.0.1',
+                   port=int(os.getenv('PORT', 8080)))
