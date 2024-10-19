@@ -16,6 +16,9 @@ import requests  # Importa la librería requests
 import time  # Importa time para usar en el bucle keep_alive
 import pandas as pd
 
+KEEP_ALIVE_CHANNEL_ID = 1296836514457849947  # The channel ID for "yo"
+
+
 logging.basicConfig(level=logging.DEBUG,
                     format='%(asctime)s - %(levelname)s - %(message)s')
 load_dotenv()
@@ -34,15 +37,29 @@ intents.message_content = True
 intents.members = True
 bot = commands.Bot(command_prefix='!', intents=intents)
 
+async def send_keep_alive_message():
+    channel = bot.get_channel(KEEP_ALIVE_CHANNEL_ID)
+    if channel:
+        current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        await channel.send(f"Keep alive - {current_time}")
+    else:
+        print(f"Error: Could not find channel with ID {KEEP_ALIVE_CHANNEL_ID}")
+
 def keep_alive():
     while True:
         try:
-            # Reemplaza con tu URL en Render
+            # Send a request to your Render URL
             requests.get("https://bot-discord-soy.onrender.com/")
-        except requests.exceptions.RequestException as e:
-            print(f"Error: {e}")
-        time.sleep(1000)  # Realiza un ping cada 10 minutos
+            print("Keep-alive ping sent to Render")
+            
+            # Send a message to Discord
+            asyncio.run_coroutine_threadsafe(send_keep_alive_message(), bot.loop)
+            print("Keep-alive message sent to Discord")
+        except Exception as e:
+            print(f"Error in keep_alive function: {e}")
+        time.sleep(600)  # Sleep for 10 minutes
 
+# Start the keep-alive thread
 threading.Thread(target=keep_alive, daemon=True).start()
 
 @bot.event
@@ -97,11 +114,11 @@ def guardar_en_google_sheets(respuestas):
 async def iniciar_encuesta_personal(channel, member):
     await channel.send(f"{member.mention}, por favor cuéntanos sobre ti!")
     preguntas = [
-        "😁 - Nombre: ",
-        "🔢 - Edad: ",
-        "🌎 - País donde vives: ",
-        "🤖 - Qué esperas de BX? ",
-        "👉 - comparte tu linkedin ",
+        f"😁 **Cuál es tu nombre** {member.name}**:**",
+        f"🔢 {member.mention} **tu Edad:**",
+        f"🌎 {member.mention} **País donde vives:**",
+        f"🤖 {member.mention} **Qué esperas de BX?**",
+        f"👉 {member.mention} **Comparte tu linkedin**",
     ]
     respuestas = {
         "user_discord": member.name,
