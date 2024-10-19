@@ -13,7 +13,6 @@ from oauth2client.service_account import ServiceAccountCredentials
 from dotenv import load_dotenv
 import logging
 import requests
-import time
 import pandas as pd
 import pytz
 
