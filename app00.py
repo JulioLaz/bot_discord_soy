@@ -18,6 +18,7 @@ import pandas as pd
 import pytz
 from datetime import datetime
 
+
 local_tz = pytz.timezone('America/Argentina/Buenos_Aires')
 local_time_now = datetime.now(local_tz).strftime("%Y-%m-%d %H:%M")
 
@@ -115,8 +116,10 @@ def guardar_en_google_sheets(respuestas):
     except Exception as e:
         logging.error(f"Error guardando en Google Sheets: {e}")
 
-
 async def iniciar_encuesta_personal(channel, member):
+    avatar_url = member.avatar_url
+    await channel.send(f"¡Bienvenido, {member.mention}!\nMira tu imagen de perfil:")
+    await channel.send(avatar_url)    
     await channel.send(f"{member.mention}, por favor cuéntanos sobre ti!")
     preguntas = [
         f"😁 **Cuál es tu nombre** {member.name}**:**",

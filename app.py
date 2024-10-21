@@ -24,6 +24,7 @@ KEEP_ALIVE_CHANNEL_ID = 1296836514457849947  # The channel ID for "yo"
 logging.basicConfig(level=logging.DEBUG,
                     format='%(asctime)s - %(levelname)s - %(message)s')
 load_dotenv()
+
 TOKEN = os.getenv('DISCORD_TOKEN')
 SERVER_ID = 1273343475651317954
 CHANNEL_IDS = [
@@ -75,22 +76,25 @@ intents.message_content = True
 intents.members = True
 bot = KeepAliveBot(command_prefix='!', intents=intents)
 
-
-
 @bot.command()
 async def soy(ctx):
     if ctx.guild.id != SERVER_ID or ctx.channel.id not in CHANNEL_IDS:
-        await ctx.send("Este comando solo puede ser usado en los canales designados para la encuesta.")
+        await ctx.send("Este comando solo puede ser usado en los canales designados.")
         return
     await iniciar_encuesta_personal(ctx.channel, ctx.author)
 
-google_creds_json = os.getenv('GOOGLE_CREDENTIALS_JSON')
-if google_creds_json is None:
-    logging.error("La variable de entorno 'GOOGLE_CREDENTIALS_JSON' no está configurada.")
-else:
-    logging.info("Variable de entorno 'GOOGLE_CREDENTIALS_JSON' cargada correctamente.")
+def parse_json_from_env(env_var_name):
+    json_string = os.getenv(env_var_name)
+    if not json_string:
+        print(f"Environment variable {env_var_name} not found")
+        return None
+    json_string = json_string.replace('\n', '\\n')
+    json_string = json_string.replace("'",'"')
+    # json_string = json_string.replace('\\n-----END PRIVATE KEY-----', '5MhVJJmHA+5iFmbnN+7Uel0=\\n-----END PRIVATE KEY-----')
+    return json_string
+creds_dict_00 = parse_json_from_env('GOOGLE_CREDENTIALS_JSON')
+creds_dict = json.loads(creds_dict_00)
 
-creds_dict = json.loads(google_creds_json)
 scope = ['https://spreadsheets.google.com/feeds',
          'https://www.googleapis.com/auth/drive']
 creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
@@ -112,7 +116,10 @@ def guardar_en_google_sheets(respuestas):
         logging.error(f"Error guardando en Google Sheets: {e}")
 
 async def iniciar_encuesta_personal(channel, member):
-    await channel.send(f"{member.mention}, por favor cuéntanos sobre ti!")
+    avatar_url = member.avatar.url
+    await channel.send(f"**¡WELCOME, {member.mention}!**")
+    await channel.send(avatar_url)   
+    # await channel.send(f"{member.mention}, por favor cuéntanos sobre ti!")
     preguntas = [
         f"😁 **Cuál es tu nombre** {member.name}**:**",
         f"🔢 {member.mention} **tu Edad:**",
